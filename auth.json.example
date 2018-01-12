@@ -1,4 +1,5 @@
 {
 	"bot_token" : "bot token if using a bot account",
 	"client_id" : "client id if using a bot account and you want people to be able to invite it to their server",
+	"default_channel" : "the default channel you want the bot to connect to"
 }
