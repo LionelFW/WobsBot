@@ -20,17 +20,12 @@ const client = new Discord.Client();
 client.on('ready', () => {
   var channel;
   console.log('I am ready!');
-  let database = new sqlite.Database('./db/quotes.db', sqlite.OPEN_READWRITE,(err) => {
+  let database = new sqlite.Database('./db/quotes.db', sqlite.OPEN_READWRITE,async (err) => {
     if(err){
       console.log(err.message);
-      let database = utils.createDatabase();
-      if(database===null){
-        process.exit();
-      }
+      let database = await utils.createDatabase();
     }
-    console.log('Connected to the SQlite database');
-    let truc = utils.checkDatabase(database);
-    console.log(truc)
+    let truc = await utils.checkDatabase(database);
     if(truc){
       console.log('Database is valid, ready to use !');
     } else {

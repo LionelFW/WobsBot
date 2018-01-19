@@ -1,4 +1,5 @@
 const sqlite = require('sqlite3').verbose();
+const fs = require('fs');
 
 function checkRole(member, role){
     var memberRoles;
@@ -24,10 +25,18 @@ function checkRole(member, role){
 exports.checkRole = checkRole;
 
 function createDatabase(){
+    if (!fs.existsSync('./db')){
+        try {
+            fs.mkdirSync('./db');
+        } catch (error) {
+            console.log(error + ' : couldn\'t create db folder. Exiting. (check process privileges)');
+            process.exit();
+        }
+    }
     let database = new sqlite.Database('./db/quotes.db', sqlite.OPEN_READWRITE | sqlite.OPEN_CREATE ,(err) => {
         if(err){
-          return console.log(err.message + ' : failed to create database. Closing application.');
-          return false;
+          console.log(err.message + ' : failed to create database. Closing application.');
+          process.exit();
         }
     });
     // La date sera un int : le nombre de secondes depuis le 01/01/1970 à 00:00:00
@@ -36,7 +45,7 @@ function createDatabase(){
             id INT PRIMARY KEY NOT NULL,
             name VARCHAR(32)
         );     
-    `
+    `;
     database.run(sqlQueryUsers);
     let sqlQueryQuotes=`
         CREATE TABLE IF NOT EXISTS quotes (
@@ -45,23 +54,20 @@ function createDatabase(){
         quote TEXT NOT NULL,
         date INT
     );
-    `
+    `;
     database.run(sqlQueryQuotes);
     return database;
 }
 exports.createDatabase = createDatabase;
 
-function checkDatabase(database){
+async function checkDatabase(database){
     let sqlQuery = `
         SELECT count(*) FROM sqlite_master WHERE type='table' AND (name='users' OR name='quotes')
     `;
-    database.get(sqlQuery, (err, row)=>{
+    return await database.get(sqlQuery, (err, row)=>{
         if(err){
             console.log(err.message);
         }
-        callback(row)
     });
-
-
 }
 exports.checkDatabase = checkDatabase;
