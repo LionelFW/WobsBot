@@ -24,6 +24,23 @@ function checkRole(member, role){
 }
 exports.checkRole = checkRole;
 
+function startDatabase(){
+    let database = new sqlite.Database('./db/quotes.db', sqlite.OPEN_READWRITE,(err) => {
+        if(err){
+          console.log(err.message);
+          let database = utils.createDatabase();
+        }
+    });
+    let truc = utils.checkDatabase(database);
+    if(truc){
+      console.log('Database is valid, ready to use !');
+    } else {
+      console.log('Database is missing something. Trying to repair now.');
+      utils.repairDatabase(database);
+    }
+}
+exports.startDatabase = startDatabase;
+
 function createDatabase(){
     if (!fs.existsSync('./db')){
         try {
@@ -40,10 +57,19 @@ function createDatabase(){
         }
     });
     // La date sera un int : le nombre de secondes depuis le 01/01/1970 à 00:00:00
+    let sqlQueryRoles = `
+        CREATE TABLE IF NOT EXISTS roles (
+            id INT PRIMARY KEY NOT NULL,
+            rolename VARCHAR(32)
+        );
+    `;
+    database.run(sqlQueryRoles);
     let sqlQueryUsers = `
         CREATE TABLE IF NOT EXISTS users (
             id INT PRIMARY KEY NOT NULL,
-            name VARCHAR(32)
+            name VARCHAR(32),
+            roleid INT NOT NULL,
+            FOREIGN KEY (roleid) REFERENCES roles(id)
         );     
     `;
     database.run(sqlQueryUsers);
@@ -52,7 +78,8 @@ function createDatabase(){
         id INT PRIMARY KEY NOT NULL,
         userid INT NOT NULL,
         quote TEXT NOT NULL,
-        date INT
+        date INT,
+        FOREIGN KEY (userid) REFERENCES users(id)
     );
     `;
     database.run(sqlQueryQuotes);
@@ -62,7 +89,7 @@ exports.createDatabase = createDatabase;
 
 async function checkDatabase(database){
     let sqlQuery = `
-        SELECT count(*) FROM sqlite_master WHERE type='table' AND (name='users' OR name='quotes')
+        SELECT count(*) FROM sqlite_master WHERE type='table' AND (name='users' OR name='quotes' OR name='roles')
     `;
     return await database.get(sqlQuery, (err, row)=>{
         if(err){

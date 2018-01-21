@@ -15,24 +15,12 @@ try {
 }
 
 const client = new Discord.Client();
+utils.startDatabase();
 
 //On ready handler
 client.on('ready', () => {
   var channel;
   console.log('I am ready!');
-  let database = new sqlite.Database('./db/quotes.db', sqlite.OPEN_READWRITE,async (err) => {
-    if(err){
-      console.log(err.message);
-      let database = await utils.createDatabase();
-    }
-    let truc = await utils.checkDatabase(database);
-    if(truc){
-      console.log('Database is valid, ready to use !');
-    } else {
-      console.log('Database is missing something. Trying to repair now.');
-      //utils.repairDatabase(database);
-    }
-  });
   client.user.setPresence({
     game: {
       name: 'with your mind',
@@ -62,7 +50,7 @@ client.on('message', (message) => {
       return;
     }
     let parsedCommand = message.content.split(/ (.+)/)[1];
-    let oldPresenceGame = client.user.presence.game
+    let oldPresenceGame = client.user.presence.game;
     client.user.setPresence({
       game: {
         name: parsedCommand
@@ -79,11 +67,12 @@ client.on('message', (message) => {
 });
 
 client.on('presenceUpdate', (oldMember, newMember) => {
-  console.log('event')
   if(newMember.presence.game===null)
   {
     return;
   }
+  channel.send('@everyone');
+  console.log(newMember.presence.game.name);
   if(newMember.presence.game.name==='Fortnite'){
     channel.send('@everyone')
       .then((message)=>logMessage(message));
@@ -104,5 +93,5 @@ process.on('SIGINT', () => {
 });
 
 function logMessage(message){
-  console.log('Message sent : "' + message.content + '" on channel ' + message.channel);
+  console.log('Message sent : "' + message.content + '" on channel : ' + message.channel.name);
 }
