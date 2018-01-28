@@ -6,6 +6,7 @@
 const Discord = require('discord.js');
 const utils = require('./utils.js');
 const sqlite = require('sqlite3').verbose();
+const quotedb = './db/quotes.db';
 var serverInfo;
 try {
   serverInfo = require('./auth.json');
@@ -15,7 +16,9 @@ try {
 }
 
 const client = new Discord.Client();
+//At first, we try to connect to the database, we then check its "integrity", and repair it if needed
 utils.startDatabase();
+
 
 //On ready handler
 client.on('ready', () => {
@@ -30,6 +33,7 @@ client.on('ready', () => {
   });
   // Eventually, I'd like to make it so that the bot looks for the first available channel if none is mentionned in auth.json
   if (serverInfo.default_channel) {
+    console.log('Default channel : ' + serverInfo.default_channel)
     channel = client.channels.find('name', serverInfo.default_channel);
   } else {
     console.log('No default channel found in auth.json');
@@ -45,6 +49,7 @@ client.on('ready', () => {
 
 //Messages handler
 client.on('message', (message) => {
+  // Should use commando
   if(message.content.startsWith('w!changegame')){
     if(!utils.checkRole(message.member, serverInfo.admin_rank)){
       return;
@@ -64,6 +69,27 @@ client.on('message', (message) => {
         }
       });
   }
+  if(message.content.startsWith('w!addquote')){
+    let parsedCommand = message.content.split(' ');
+    var quote='';
+    parsedCommand.forEach(element => {
+      if(parsedCommand.indexOf(element)!==0 & parsedCommand.indexOf(element)!==(parsedCommand.length-1)){
+        quote += ' ' + element;
+      }
+    });
+    if(!utils.checkRole(message.member, 'admin')){
+      return;
+    };
+    console.log(quote)
+    if(quote !== ''){
+      try{
+        utils.addQuote(parsedCommand[parsedCommand.length - 1], quote, true);
+      } catch(error) {
+        console.log(error);
+        return;
+      }
+    }
+  };
 });
 
 client.on('presenceUpdate', (oldMember, newMember) => {
