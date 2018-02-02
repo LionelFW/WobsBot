@@ -1,6 +1,6 @@
 {
   "name": "wobsbot",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "A simple bot",
   "main": "discordbot.js",
   "scripts": {

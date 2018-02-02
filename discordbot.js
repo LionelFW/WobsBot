@@ -17,8 +17,7 @@ try {
 
 const client = new Discord.Client();
 //At first, we try to connect to the database, we then check its "integrity", and repair it if needed
-utils.startDatabase();
-
+var database = utils.startDatabase();
 
 //On ready handler
 client.on('ready', () => {
@@ -31,6 +30,7 @@ client.on('ready', () => {
     status: 'online',
     afk: false,
   });
+
   // Eventually, I'd like to make it so that the bot looks for the first available channel if none is mentionned in auth.json
   if (serverInfo.default_channel) {
     console.log('Default channel : ' + serverInfo.default_channel)
@@ -69,6 +69,7 @@ client.on('message', (message) => {
         }
       });
   }
+
   if(message.content.startsWith('w!addquote')){
     let parsedCommand = message.content.split(' ');
     var quote='';
@@ -90,20 +91,52 @@ client.on('message', (message) => {
       }
     }
   };
-});
 
+  if(message.content.startsWith('w!randomquote')){
+    console.log('About to send a quote...')
+    let database = new sqlite.Database(quotedb, sqlite.OPEN_READWRITE ,(err) => {
+      if(err){
+        console.log(err);
+      }
+    });
+    utils.getNbQuotes(database)
+      .then(async (result) => {
+        id = getRandomInt(result["count(*)"])+1;
+        await utils.getQuoteById(database, id)
+          .then((result) => {
+            utils.formatQuote(database, result)
+              .then((result) => {
+                message.channel.send(result)
+                  .then((message) => {
+                    logMessage(message);
+                  })
+                  .catch((err) => {
+                    console.log(err.message + ',' + err.code + ',' + err.name);
+                  })
+                })
+              .catch((err)=>{
+                console.log(err)
+              })
+          })
+          .catch((err) => {
+            console.log(err)
+          });
+      });
+  }
+});
+/*
 client.on('presenceUpdate', (oldMember, newMember) => {
-  if(newMember.presence.game===null)
+  if(newMember.presence.game === null)
   {
     return;
   }
-  channel.send('@everyone');
   console.log(newMember.presence.game.name);
   if(newMember.presence.game.name==='Fortnite'){
     channel.send('@everyone')
       .then((message)=>logMessage(message));
   }
-});
+})
+*/
 
 //Bot Login
 if (serverInfo.bot_token) {
@@ -120,4 +153,8 @@ process.on('SIGINT', () => {
 
 function logMessage(message){
   console.log('Message sent : "' + message.content + '" on channel : ' + message.channel.name);
+}
+
+function getRandomInt(max) {
+  return Math.floor(Math.random() * Math.floor(max));
 }
